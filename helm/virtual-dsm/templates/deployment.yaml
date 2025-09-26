@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Values.namespaceOverride }}
+  name: {{ .Release.Name }}
+  labels:
+    name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      nodeSelector:
+        {{ toYaml .Values.nodeSelector | indent 8 }}
+      containers:
+        - name: dsm
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}
+          env:
+            {{- range $index, $value := .Values.volumes }}
+            {{- if eq $index 0 }}
+            - name: DISK_SIZE
+            {{- else }}
+            - name: DISK{{ add $index 1 }}_SIZE
+            {{- end }}
+              value: {{ $value.diskSize }}
+            {{- end }}
+          ports:
+            {{- range .Values.service.ports }}
+            - containerPort: {{ .port }}
+              name: {{ .name }}
+              protocol: {{ .protocol | default "TCP" }}
+            {{- end }}
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+            privileged: true
+          volumeMounts:
+            {{- range .Values.volumeMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+            {{- range .Values.passThrough.disks }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+            - name: dev-kvm
+              mountPath: /dev/kvm
+            - name: dev-tun
+              mountPath: /dev/net/tun
+          resources:
+             {{- toYaml .Values.resources | nindent 12 }}
+      terminationGracePeriodSeconds: 120
+      volumes:
+        {{- range .Values.volumes }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .hostPath.path }}
+            type: {{ .hostPath.type }}
+        {{- end }}
+        {{- range .Values.passThrough.disks }}
+        - name: {{ .name }}
+          hostPath:
+            path: {{ .device }}
+        {{- end }}
+        - hostPath:
+            path: /dev/kvm
+          name: dev-kvm
+        - hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+          name: dev-tun
