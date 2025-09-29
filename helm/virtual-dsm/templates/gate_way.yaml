@@ -1,13 +1,13 @@
 {{- if .Values.gateway.enabled }}
+{{- if .Values.gatewayClass.enabled }}
 kind: GatewayClass
 apiVersion: gateway.networking.k8s.io/v1
 metadata:
-  name: {{ .Release.Name }}-gateway-class
+  name: {{ .Values.gatewayClass.name }}
 spec:
-  nodeSelector:
-    {{ toYaml .Values.nodeSelector | indent 8 }}
-  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  controllerName: {{ .Values.gatewayClass.controllerName }}
 ---
+{{- end }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -15,7 +15,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt
   name: {{ .Release.Name }}-gateway
 spec:
-  gatewayClassName: {{ .Release.Name }}-gateway-class
+  gatewayClassName: {{ .Values.gatewayClass.name }}
   addresses:
     - type: IPAddress
       value: {{ .Values.gateway.ip }}

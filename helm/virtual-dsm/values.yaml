@@ -68,6 +68,11 @@ service:
 #      protocol: TCP
 #      targetPort: 5001
 
+gatewayClass :
+  enabled: false
+  name: main-gateway-class
+  controllerName:
+
 gateway:
   enabled: false
   ip: 192.168.1.0
