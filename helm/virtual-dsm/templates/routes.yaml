@@ -1,0 +1,44 @@
+{{- range .Values.routes }}
+{{- if hasPrefix "tcp" .protocol }}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: {{ upper .protocol }}Route
+{{- else}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+{{- end}}
+metadata:
+  name: {{ $.Release.Name }}-{{ .protocol }}
+spec:
+  parentRefs:
+    - name: {{ $.Release.Name }}-gateway
+      sectionName: {{ $.Release.Name }}-{{ .protocol }}
+    - name: main-gateway
+      namespace: home-gateway
+{{- if hasPrefix "https" .protocol }}
+      sectionName: shared-{{ lower .protocol }}
+  hostnames:
+    - {{ .hostName }}
+{{- else if hasPrefix "http" .protocol }}
+      sectionName: shared-{{ lower .protocol }}
+  hostnames:
+    - {{ .hostName }}
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- else}}
+      sectionName: dsm-terminal
+{{- end }}
+  rules:
+    - backendRefs:
+        - name: {{ $.Release.Name }}-svc
+          port: {{ .port }}
+{{- if hasPrefix "http" .protocol }}
+      timeouts:
+        request: {{ $.Values.httpRoute.request.timeouts }}
+        backendRequest: {{ $.Values.httpRoute.backedRequest.timeouts }}
+{{- end }}
+---
+{{- end }}

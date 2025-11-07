@@ -27,11 +27,17 @@ spec:
             {{- else }}
             - name: DISK{{ add $index 1 }}_SIZE
             {{- end }}
-              value: {{ $value.diskSize }}
+              value: {{ $value.diskSize | default "16G"}}
+            - name: DISK_FMT
+              value: {{ $value.diskFormat | default "raw" }}
+            {{- end }}
+            {{- if .Values.url}}
+            - name: URL
+              value: {{ .Values.url }}
             {{- end }}
           ports:
             {{- range .Values.service.ports }}
-            - containerPort: {{ .port }}
+            - containerPort: {{ .targetPort }}
               name: {{ .name }}
               protocol: {{ .protocol | default "TCP" }}
             {{- end }}
