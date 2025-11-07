@@ -1,0 +1,24 @@
+{{- if and .Values.gatewayClass.enabled .Values.gateway.enabled }}
+{{- end }}
+{{- if .Values.gateway.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  name: {{ .Release.Name }}-gateway
+spec:
+  gatewayClassName: {{ .Values.gatewayClass.name }}
+  addresses:
+    - type: IPAddress
+      value: {{ .Values.gateway.ip }}
+  listeners:
+{{- range .Values.gateway.routes }}
+    - name: {{ $.Release.Name }}-{{ .protocol }}
+      protocol: {{ upper .protocol }}
+      port: {{ .port }}
+      allowedRoutes:
+        kinds:
+          - kind: {{ upper .protocol }}Route
+{{- end }}
+{{- end }}
