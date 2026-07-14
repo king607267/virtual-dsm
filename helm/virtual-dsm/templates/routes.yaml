@@ -1,6 +1,6 @@
 {{- range .Values.routes }}
 {{- if hasPrefix "tcp" .protocol }}
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: {{ upper .protocol }}Route
 {{- else}}
 apiVersion: gateway.networking.k8s.io/v1
@@ -12,13 +12,15 @@ spec:
   parentRefs:
     - name: {{ $.Release.Name }}-gateway
       sectionName: {{ $.Release.Name }}-{{ .protocol }}
+{{- if hasPrefix "https" .protocol }}
     - name: main-gateway
       namespace: home-gateway
-{{- if hasPrefix "https" .protocol }}
       sectionName: shared-{{ lower .protocol }}
   hostnames:
     - {{ .hostName }}
 {{- else if hasPrefix "http" .protocol }}
+    - name: main-gateway
+      namespace: home-gateway
       sectionName: shared-{{ lower .protocol }}
   hostnames:
     - {{ .hostName }}
@@ -29,7 +31,15 @@ spec:
             scheme: https
             statusCode: 301
 {{- else}}
+{{- if $.Values.listenerSet.enabled }}
+    - name: {{ $.Release.Name }}-listenerset
+      kind: ListenerSet
+      sectionName: terminal
+{{- else }}
+    - name: main-gateway
+      namespace: home-gateway
       sectionName: dsm-terminal
+{{- end }}
 {{- end }}
   rules:
     - backendRefs:

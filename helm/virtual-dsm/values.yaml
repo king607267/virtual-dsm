@@ -98,6 +98,11 @@ routes: []
 #    targetPort: 5001
 #    hostName:
 
+listenerSet:
+  enabled: false
+  terminal:
+    port: 2222
+
 tls:
   enabled: false
   secretName: chart-example-tls

@@ -1,0 +1,21 @@
+{{- if .Values.listenerSet.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: {{ $.Release.Name }}-listenerset
+spec:
+  parentRef:
+    name: main-gateway
+    namespace: home-gateway
+    kind: Gateway
+    group: gateway.networking.k8s.io
+  listeners:
+    - name: terminal
+      protocol: TCP
+      port: {{ .Values.listenerSet.terminal.port }}
+      allowedRoutes:
+        kinds:
+          - kind: TCPRoute
+        namespaces:
+          from: Same
+{{- end }}
